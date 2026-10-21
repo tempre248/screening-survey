@@ -3,7 +3,7 @@ const $=id=>document.getElementById(id), answers={}, details={};let page=0;
 function el(tag,text,cls){const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;}
 SURVEY.intro.slice(1,3).forEach(t=>{const p=el('p');const marker='（25-64岁）';const at=t.indexOf(marker);if(at>=0){p.append(document.createTextNode(t.slice(0,at)),el('strong',marker),document.createTextNode(t.slice(at+marker.length)));}else p.textContent=t;$('intro').append(p);});
 $('start').disabled=true;$('consent').onchange=e=>$('start').disabled=!e.target.checked;
-$('start').onclick=()=>{$('welcome').hidden=true;$('survey').hidden=false;render();};
+$('start').onclick=()=>{if(!window.participantConfirmed||!$('consent').checked)return;$('welcome').hidden=true;$('survey').hidden=false;render();};
 function skipped(i){const n=Number(i.id?.split('q')[1]);return page===0&&((n===22&&answers.s1q21?.startsWith('否'))||(n>=24&&n<=26&&answers.s1q23&&!answers.s1q23.startsWith('是')));}
 function render(){
  const s=SURVEY.sections[page];$('form').replaceChildren(el('h2',s.title));$('step').textContent=`第 ${page+1} / 6 部分`;$('bar').value=page+1;$('tabs').replaceChildren();
@@ -23,5 +23,5 @@ function updateCount(){$('count').textContent=`本部分已填写 ${SURVEY.secti
 $('form').onsubmit=e=>e.preventDefault();$('prev').onclick=()=>{if(page>0){page--;render();window.scrollTo(0,280);}};
 $('next').onclick=()=>{if(page<5){page++;render();window.scrollTo(0,280);}else{$('survey').hidden=true;$('done').hidden=false;}};
 $('back').onclick=()=>{$('done').hidden=true;$('survey').hidden=false;};
-function buildResponse(){const rows=SURVEY.sections.flatMap((s,k)=>s.items.filter(i=>i.id).map(i=>({部分:s.title,题号:i.id,题目:i.text,答案:k===0&&((Number(i.id.split('q')[1])===22&&answers.s1q21?.startsWith('否'))||(Number(i.id.split('q')[1])>=24&&Number(i.id.split('q')[1])<=26&&answers.s1q23&&!answers.s1q23.startsWith('是')))?'按跳题规则跳过':answers[i.id]||'',补充:details[i.id]||''})));return {问卷:SURVEY.intro[0],版本:'10.21修原稿选项核对版',完成时间:new Date().toISOString(),答卷:rows};}
+function buildResponse(){const rows=SURVEY.sections.flatMap((s,k)=>s.items.filter(i=>i.id).map(i=>({部分:s.title,题号:i.id,题目:i.text,答案:k===0&&((Number(i.id.split('q')[1])===22&&answers.s1q21?.startsWith('否'))||(Number(i.id.split('q')[1])>=24&&Number(i.id.split('q')[1])<=26&&answers.s1q23&&!answers.s1q23.startsWith('是')))?'按跳题规则跳过':answers[i.id]||'',补充:details[i.id]||''})));return {填写者:window.participantLabel||'',问卷:SURVEY.intro[0],版本:'10.21修原稿选项核对版',完成时间:new Date().toISOString(),答卷:rows};}
 $('download').onclick=()=>{const blob=new Blob([JSON.stringify(buildResponse(),null,2)],{type:'application/json;charset=utf-8'});const a=el('a');a.href=URL.createObjectURL(blob);a.download='问卷答卷_'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
