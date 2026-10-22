@@ -27,6 +27,13 @@
   }catch(e){$('registration-status').textContent='无法读取本机登记表。';}
  }
  drawRegistry();
+ const recordsPanel=$('records-panel'),showRecords=$('show-records'),refreshRecords=$('refresh-records');
+ function toggleRecords(force){
+  const open=typeof force==='boolean'?force:recordsPanel.hidden;
+  recordsPanel.hidden=!open;refreshRecords.hidden=!open;showRecords.setAttribute('aria-expanded',String(open));showRecords.textContent=open?'收起已填问卷':'查看已填问卷';
+  if(open)drawRegistry();
+ }
+ showRecords.onclick=()=>toggleRecords();refreshRecords.onclick=()=>drawRegistry();
  $('registration-form').onsubmit=e=>{
   e.preventDefault();const label=$('participant-id').value.trim();
   if(!label){$('registration-status').textContent='请先输入姓名或编号。';return;}
@@ -49,7 +56,7 @@
    const at=records.findIndex(r=>r.id===id);if(at<0)records.push(record);else records[at]=record;
    localStorage.setItem(recordKey,JSON.stringify(records));
    if(!read(recordKey,[]).some(r=>r.id===id))throw Error('Local verification failed');
-   completed=true;saveDraft();status.textContent='已成功保存到本机！答卷编号：'+id+'。建议再下载文件备份。';
+   completed=true;saveDraft();if(!recordsPanel.hidden)drawRegistry();status.textContent='已成功保存到本机！答卷编号：'+id+'。建议再下载文件备份。';
   }catch(e){status.textContent='本机保存失败，可能是存储空间不足或浏览器限制。请立即下载答卷备份。';}
  };
  $('new-response').onclick=()=>{
